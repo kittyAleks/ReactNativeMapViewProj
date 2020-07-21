@@ -1,10 +1,8 @@
 import React from 'react';
 import {View, StyleSheet, Text, Platform, TouchableOpacity, Image, Button} from 'react-native';
-import {FONTFAMILY} from '../theme';
 import LinearGradient from "react-native-linear-gradient";
 
-export const WeeklyWeather = ({item, rowID, onOpen, navigation}) => {
-    console.log('DDD WeeklyWeather item', item)
+export const WeeklyWeather = ({item}) => {
     return (
         <View style={styles.mainContainer}>
             <TouchableOpacity key={item.id}>

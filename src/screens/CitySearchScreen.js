@@ -5,12 +5,13 @@ import { Container, InputGroup, Input, Text, Button as NBButton, Icon as NBIcon}
 import SingleCardView from 'react-native-simple-card';
 import LinearGradient from "react-native-linear-gradient";
 
-const MAP_API_KEY = 'bf0219cc64e9bfcb6ffc79fd2e58efc0';
+const MAP_API_KEY = '22295d90be572afe2dcdc216eb009d94';
 
 export default function CitySearchScreen({route}) {
 
     const [searchText, setSearchText] = useState('');
     const [days, setDays] = useState([]);
+    const [error, setError] = useState(null);
 
     const onSearchTextChange = (searchText) => {
         setSearchText(searchText);
@@ -22,18 +23,22 @@ export default function CitySearchScreen({route}) {
     };
 
     const getWeather = async () => {
-        console.log('QQQ searchText', searchText)
-            const weatherURL =
-                `https://api.openweathermap.org/data/2.5/forecast?q=${searchText}&lang=ru&units=metric&APPID=${MAP_API_KEY}`
-        console.log('QQQ weatherURL', weatherURL)
-            fetch(weatherURL)
-                .then(res => res.json())
-                .then((data) => {
+        const weatherURL =
+            `https://api.openweathermap.org/data/2.5/forecast?q=${searchText}&lang=ru&units=metric&APPID=${MAP_API_KEY}`
+        fetch(weatherURL)
+            .then(res => res.json())
+            .then((data) => {
+                console.log('QQQ data', data)
+                if(data.cod && parseInt(data.cod) !== 200) {
+                    setError(data.message);
+                } else {
                     const dailyData = data.list.filter(getting => getting.dt_txt.includes("18:00:00"));
-                    console.log('QQQ dailyData', dailyData);
-                    setDays( dailyData);
-                });
-        console.log('QQQ days', days)
+                    setDays(dailyData);
+                    setError(null);
+                    console.log('QQQ days', days)
+
+                }
+            });
     };
 
     return (
@@ -58,23 +63,31 @@ export default function CitySearchScreen({route}) {
                         onChangeText={onSearchTextChange}
                         placeholder='Select city name...'/>
                 </InputGroup>
-                <Button onPress={getWeather} title={'Get Weather'}>
 
-                </Button>
+                <TouchableOpacity onPress={getWeather}>
+                    <LinearGradient colors={['#7376f2', '#98c6f3']}
+                                    style={styles.buttonStyle}>
+                        <Text>Get Weather</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
 
-                <ScrollView>
-                    {days.map((item, index) => {
-                        const ms = item.dt * 1000;
-                        const weekdayName = new Date(ms).toLocaleString('ru', {weekday: 'long'});
-                        return <View key={index}>
-                            <LinearGradient colors={['#533df2', '#799BF3']}
-                                            style={styles.buttonStyle}>
-                                    <Text>{weekdayName? weekdayName : ''}</Text>
+                {!error ?
+                    <ScrollView>
+                        {days.map((item, index) => {
+                            const ms = item.dt * 1000;
+                            const weekdayName = new Date(ms).toLocaleString('ru', {weekday: 'long'});
+                            return <View key={index}>
+                                <LinearGradient colors={['#533df2', '#799BF3']}
+                                                style={styles.buttonStyle}>
+                                    <Text>{weekdayName}</Text>
                                     <Text>{item.main.temp} °C</Text>
-                            </LinearGradient>
-                        </View>
-                    })}
-                </ScrollView>
+                                </LinearGradient>
+                            </View>
+                        })}
+                    </ScrollView>
+                    :
+                    <Text>{error}</Text>
+                }
 
             </View>
         </Container>

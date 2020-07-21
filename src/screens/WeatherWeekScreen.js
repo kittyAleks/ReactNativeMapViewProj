@@ -14,56 +14,65 @@ import {Container, InputGroup, Input, Text, Button as NBButton, Icon as NBIcon, 
 import {CitySearchList} from '../components/CitySearchList';
 import {DATA} from '../data';
 
-export default function WeatherWeekScreen({navigation, route}) {
+const MAP_API_KEY = '22295d90be572afe2dcdc216eb009d94';
+const GET_FORECAST_BY_COORDINATES_URL = `https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&units=metric&appid=${MAP_API_KEY}`;
 
-    // const { item } = route.params;
-    // console.log('WeatherWeekScreen route.params', route.params)
+export default function WeatherWeekScreen({route}) {
+    const [days, setDays] = useState([]);
 
-    const openNewScreen = item => {
-        console.log('EEE ITEM', item);
-    };
+    useEffect(() => {
+        if (route.params.locationCoord) {
+            let url = GET_FORECAST_BY_COORDINATES_URL;
+            url = url.replace('{lat}', route.params.locationCoord.lat);
+            url = url.replace('{lon}', route.params.locationCoord.lon);
+            fetch(url)
+                .then(res => res.json())
+                .then((data) => {
+                    const dailyData = data.list.filter(getting => getting.dt_txt.includes("18:00:00"));
+                    setDays(dailyData)
+                });
+        }
+    });
 
     return (
         <View>
+
             <ImageBackground
                 style={{ flex: 1, width: '100%', height: 1000}}
                 resizeMode='cover'
                 source={require('../img/detail_img.jpg')}
                 blurRadius={1}>
             </ImageBackground>
-
-            <InputGroup style={{ paddingLeft: 25, paddingRight: 25, marginVertical: 20}} borderType='regular'>
-                <Input
-                    style={styles.inputStyle}
-                    placeholderTextColor = {"#909090"}
-                    borderType='regular'
-                    // value={searchText}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    // onChangeText={onSearchNameTextChange}
-                    placeholder='Kyiv, Ukraine'/>
-            </InputGroup>
+            <View style={styles.mainContainer}>
+                <Text>{route.params.locationName}</Text>
+            </View>
 
             <FlatList
-                data={DATA}
-                keyExtractor={(item, index) => item.id.toString()}
+                data={days}
+                keyExtractor={(item, index) => item.id}
                 renderItem={({item}) =>
-                    <CitySearchList item={item} onOpen={openNewScreen}/>
+                    <CitySearchList item={item}/>
                 }
             />
+
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-    inputStyle: {
-        paddingLeft: 20,
-        borderRadius: 10,
-        height: 50,
-        backgroundColor: '#f6f6f6',
-        borderColor: 'grey',
+    mainContainer: {
+        backgroundColor: 'white',
+        alignSelf: 'center',
+        alignItems: 'center',
         borderWidth: 1,
-        opacity: 1.0
+        borderRadius: 5,
+        color: '#A5A5A5',
+        borderColor: '#A5A5A5',
+        marginTop: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        width: 220,
+        opacity: 0.8,
     },
 });
 

@@ -15,7 +15,7 @@ import {DATA} from "../data";
 import LinearGradient from 'react-native-linear-gradient';
 import MapView, { PROVIDER_GOOGLE, Marker, Callout, Polygon } from 'react-native-maps';
 
-const MAP_API_KEY = 'bf0219cc64e9bfcb6ffc79fd2e58efc0';
+const MAP_API_KEY = '22295d90be572afe2dcdc216eb009d94';
 const GET_WEATHER_BY_COORDINATES_URL = `https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&units=metric&appid=${MAP_API_KEY}`;
 
 export default function MapScreen({navigation, route}) {
@@ -28,6 +28,7 @@ export default function MapScreen({navigation, route}) {
 
     const [markers, setMarkers] = useState([]);
     const [markerLastIndex, setMarkerLastIndex] = useState(1);
+    const [error, setError] = useState(null);
 
     const onMapPress = (e) => {
         const coordinate = e.nativeEvent.coordinate;
@@ -43,32 +44,27 @@ export default function MapScreen({navigation, route}) {
         url = url.replace('{lat}', coordinate.latitude);
         url = url.replace('{lon}', coordinate.longitude);
 
-
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                console.log('data',data);
-                setMarkers([...markers, {...data, coordinate: coordinate}]);
+                if(data.cod && parseInt(data.cod) !== 200) {
+                    setMarkers([...markers, {error: data.message, coordinate: coordinate}]);
+                } else {
+                    setMarkers([...markers, {...data, coordinate: coordinate}]);
+                }
             });
-        console.log('setMarkers', markers);
-
     };
 
-    console.log('markers', markers);
-
-    // const handleCalloutPress = (index) => {
-    //     alert('Hello')
-    // }
-
-    const gotoCity = () => {
-        navigation.navigate('WeatherWeekScreen', {markers})
+    const handleCalloutPress = (locationCoord,locationName) => {
+        navigation.navigate('WeatherWeekScreen', {locationCoord, locationName})
     };
 
     return (
-        <Container style={{
+        <View style={{
             flex: 1,
         }}>
             <View style={{flex: 1}}>
+
                 <MapView
                     provider={PROVIDER_GOOGLE}
                     style={{flex: 1}}
@@ -76,9 +72,8 @@ export default function MapScreen({navigation, route}) {
                     showsUserLocation={true}
                     onPress={onMapPress}
                 >
-                    {markers.map((marker, index) => (
-                        <Marker
-                            // onPress={() => navigation.navigate('WeatherWeekScreen', {markers})}
+                    {markers.map((marker, index) => {
+                        return <Marker
                             key={index}
                             coordinate={marker.coordinate}
                             pinColor={'#ff2061'}
@@ -86,32 +81,29 @@ export default function MapScreen({navigation, route}) {
                             title={'description'}
                             description={'description'}
                         >
-                            <Button
-                                title="Go to Jane's profile"
-                                onPress={gotoCity}
-                            />
+                            {!marker.error ?
+                                <Callout
+                                    onPress={handleCalloutPress.bind(null,marker.coord,marker.name)}
+                                >
+                                    <View style={styles.bubble}>
+                                        <Text>{marker.name}</Text>
+                                        <Text>+{marker.main.temp}°</Text>
+                                    </View>
+                                </Callout>
+                                :
+                                <View style={styles.errorFrame}>
+                                    <Text style={{fontSize: 8}}>{marker.error}</Text>
+                                </View>
+                            }
 
-                            {/*<Callout*/}
-                            {/*    onPress={handleCalloutPress}*/}
-                            {/*>*/}
-                            {/*    <View style={styles.bubble}>*/}
-                            {/*        <Text>{marker.name}</Text>*/}
-                            {/*        <Text>+{marker.main.temp}°</Text>*/}
-                            {/*    </View>*/}
-                            {/*</Callout>*/}
+
 
                         </Marker>
-                    ))}
+                    })}
                 </MapView>
+
             </View>
             <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
-                    <TouchableOpacity onPress={()=> alert('Hello')}>
-                        <LinearGradient
-                            colors={['#533df2', '#799BF3']}
-                            style={styles.buttonStyle}>
-                            <Text style={{color: 'white'}}>MAP</Text>
-                        </LinearGradient>
-                    </TouchableOpacity>
                     <TouchableOpacity onPress={()=> navigation.navigate('CitySearchScreen')}>
                         <LinearGradient
                             colors={['#533df2', '#799BF3']}
@@ -121,7 +113,7 @@ export default function MapScreen({navigation, route}) {
                     </TouchableOpacity>
             </View>
 
-        </Container>
+        </View>
     )
 }
 
@@ -144,22 +136,15 @@ const styles = StyleSheet.create({
         width: 150,
         opacity: 0.8,
     },
-    // arrow: {
-    //     backgroundColor: 'transparent',
-    //     borderColor: 'transparent',
-    //     borderTopColor: '#fff',
-    //     borderWidth: 16,
-    //     alignSelf: 'center',
-    //     marginTop: -32,
-    // },
-    // arrowBorder: {
-    //     backgroundColor: 'transparent',
-    //     borderColor: 'transparent',
-    //     borderTopColor: '#007a87',
-    //     borderWidth: 16,
-    //     alignSelf: 'center',
-    //     marginTop: -0.7,
-    // },
+    errorFrame: {
+        backgroundColor: 'white',
+        borderRadius: 5,
+        alignSelf: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        width: 150,
+        opacity: 0.8,
+    },
 
 });
 
